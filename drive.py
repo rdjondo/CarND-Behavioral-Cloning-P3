@@ -34,10 +34,14 @@ def telemetry(sid, data):
         image = Image.open(BytesIO(base64.b64decode(imgString)))
         image_array = np.asarray(image)
         steering_angle = float(model.predict(image_array[None, :, :, :], batch_size=1))
-        if float(speed)<30:
-            throttle = 0.4
+        
+        if abs(steering_angle)<0.1 or float(speed)<10:
+            target_speed = 30
+            throttle_gain = 0.2
+            throttle = min(max(throttle_gain*(target_speed-float(speed)), 0.0), 1.0)
         else:
-            throttle = 0.1
+            throttle = 0.0
+            
         print(steering_angle, throttle)
         send_control(steering_angle, throttle)
 
@@ -72,7 +76,12 @@ if __name__ == '__main__':
     parser.add_argument(
         'model',
         type=str,
-        help='Path to model h5 file. Model should be on the same path.'
+        help='Path to model pickle file (YAML). Model should be on the same path.'
+    )
+    parser.add_argument(
+        'model_weights',
+        type=str,
+        help='Path to model weights (H5 files). Model should be on the same path.'
     )
     parser.add_argument(
         'image_folder',
@@ -86,12 +95,12 @@ if __name__ == '__main__':
 
     # model reconstruction from YAML
     import pickle
-    with open('model_yaml_string.p', mode='rb') as f:
+    with open(args.model, mode='rb') as f:
         yaml_string = pickle.load(f)
         
     from keras.models import model_from_yaml
     model = model_from_yaml(yaml_string)
-    model.load_weights('my_model_weights.h5')
+    model.load_weights(args.model_weights)
     
     #model = load_model(args.model)
 
