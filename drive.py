@@ -34,9 +34,9 @@ def telemetry(sid, data):
         image = Image.open(BytesIO(base64.b64decode(imgString)))
         image_array = np.asarray(image)
         steering_angle = float(model.predict(image_array[None, :, :, :], batch_size=1))
-        throttle = 0.2
+        throttle = 0.4
         print(steering_angle, throttle)
-        send_control(steering_angle, throttle)
+        send_control(1.2*steering_angle, throttle)
 
         # save frame
         if args.image_folder != '':
@@ -80,7 +80,17 @@ if __name__ == '__main__':
     )
     args = parser.parse_args()
 
-    model = load_model(args.model)
+
+    # model reconstruction from YAML
+    import pickle
+    with open('model_yaml_string.p', mode='rb') as f:
+        yaml_string = pickle.load(f)
+        
+    from keras.models import model_from_yaml
+    model = model_from_yaml(yaml_string)
+    model.load_weights('my_model_weights.h5')
+    
+    #model = load_model(args.model)
 
     if args.image_folder != '':
         print("Creating image folder at {}".format(args.image_folder))
