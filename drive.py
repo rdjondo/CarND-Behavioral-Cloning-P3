@@ -35,6 +35,8 @@ def telemetry(sid, data):
         image_array = np.asarray(image)
         steering_angle = float(model.predict(image_array[None, :, :, :], batch_size=1))
         
+        # Fun experimentation with a Constant controller to roughly maintain
+        # a speed and reduce the throttle when turning the vehicle
         if abs(steering_angle)<0.1 or float(speed)<10:
             target_speed = 30
             throttle_gain = 0.2
