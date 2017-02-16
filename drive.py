@@ -54,8 +54,8 @@ def telemetry(sid, data):
         throttle_gain = 0.1
         throttle = min(max(throttle_gain*(target_speed-float(speed)), -1.0), 1.0)
             
-        print(steering_angle, throttle)
-        send_control(steering_angle, throttle)
+        print(steering_angle_vect, throttle)
+        send_control(1*steering_angle, throttle)
 
         # save frame
         if args.image_folder != '':
