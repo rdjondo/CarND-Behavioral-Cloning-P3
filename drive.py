@@ -12,12 +12,27 @@ from PIL import Image
 from flask import Flask
 from io import BytesIO
 
-from keras.models import load_model
-
 sio = socketio.Server()
 app = Flask(__name__)
 model = None
 prev_image_array = None
+
+#global 
+#count_lane_side = 0
+drive_UK = False
+
+
+from eventlet.green import zmq
+import eventlet
+  
+CTX = zmq.Context(1)
+  
+
+print("STARTING ALICE")
+alice = zmq.Socket(CTX, zmq.REP)
+alice.bind("ipc:///tmp/test")
+
+print("ALICE READY")
 
 
 @sio.on('telemetry')
@@ -35,7 +50,25 @@ def telemetry(sid, data):
         image_array = np.asarray(image)
         steering_angle_vect = model.predict(image_array[None, :, :, :], batch_size=1)
         
-        drive_UK = True
+        #global count_lane_side
+        global drive_UK
+        global alice
+        try:
+            drive_UK =  int(alice.recv(zmq.NOBLOCK))
+            print("ALICE GOT:", drive_UK)
+            print("ALIC SENDING")
+            alice.send("HI BACK".encode('ascii'))
+        except:
+            pass
+            
+        #count_lane_side += 1
+        #count_lim = 500
+        #if count_lane_side==count_lim:
+        #    drive_UK = not drive_UK
+        #    count_lane_side = 0
+            
+            
+        print("drive_UK:",drive_UK)
         if drive_UK:
             steering_angle = float(steering_angle_vect[0][0])
         else:
@@ -46,16 +79,14 @@ def telemetry(sid, data):
         # a speed and reduce the throttle when turning the vehicle
         if abs(steering_angle)<0.2:
             target_speed = 20
-        elif abs(steering_angle)<0.5:
-            target_speed = 15
         else:
-            target_speed = 10
+            target_speed = 15
             
         throttle_gain = 0.1
         throttle = min(max(throttle_gain*(target_speed-float(speed)), -1.0), 1.0)
             
         print(steering_angle_vect, throttle)
-        send_control(1*steering_angle, throttle)
+        send_control(1.2*steering_angle, throttle)
 
         # save frame
         if args.image_folder != '':
@@ -81,6 +112,7 @@ def send_control(steering_angle, throttle):
             'throttle': throttle.__str__()
         },
         skip_sid=True)
+
 
 
 if __name__ == '__main__':
@@ -113,8 +145,6 @@ if __name__ == '__main__':
     from keras.models import model_from_yaml
     model = model_from_yaml(yaml_string)
     model.load_weights(args.model_weights)
-    
-    #model = load_model(args.model)
 
     if args.image_folder != '':
         print("Creating image folder at {}".format(args.image_folder))
@@ -127,8 +157,15 @@ if __name__ == '__main__':
     else:
         print("NOT RECORDING THIS RUN ...")
 
+
+
+
     # wrap Flask application with engineio's middleware
     app = socketio.Middleware(sio, app)
 
+
     # deploy as an eventlet WSGI server
     eventlet.wsgi.server(eventlet.listen(('', 4567)), app)
+    
+
+
