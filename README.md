@@ -1,8 +1,8 @@
 
 
-# Files Submitted & Code Quality
+# Project checklist and description
 
-## 1. Submission includes all required files and can be used to run the simulator in autonomous mode
+## 1. The repository includes all required files and can be used to run the simulator in autonomous mode
 
 My project includes the following files:
 * model.py containing the script to create and train the model
@@ -12,7 +12,7 @@ My project includes the following files:
 * writeup_report.pdf summarizing the results
 * Video recording the car driving autonomously around track 1 : https://youtu.be/6LcAAm-0ZGg
 
-## 2. Submission includes functional code
+## 2. The repository includes functional code
 Using the Udacity provided simulator and my drive.py file, the car can be driven autonomously around the track by executing 
 ```sh
 python drive.py model_yaml_string.p my_model_weights.h5
